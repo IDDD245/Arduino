@@ -1,4 +1,3 @@
-
 int InputPin = 9;
 int LEDPin = 11;
 int wieOftWurdeTasteGedrueckt = 0;
