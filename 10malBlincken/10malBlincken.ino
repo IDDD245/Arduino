@@ -11,9 +11,10 @@ pinMode(LEDPin,OUTPUT);
 
 void loop() {  
   if (digitalRead(InputPin)) {
-    if (wieOftWurdeTasteGedrueckt < 5 ) {
+    wieOftWurdeTasteGedrueckt++;
+    if (wieOftWurdeTasteGedrueckt <= 5 ) {
       for(int i=0; i<10; i++) {
-        Serial.println("Ich blinke zum: " + String(i+1)+". Mal für Runde: "+String(wieOftWurdeTasteGedrueckt +1));
+        Serial.println("Ich blinke zum: " + String(i+1)+". Mal für Runde: "+String(wieOftWurdeTasteGedrueckt));
         digitalWrite(LEDPin,HIGH);
         delay(100);
         digitalWrite(LEDPin,LOW);   
@@ -21,7 +22,6 @@ void loop() {
       }
     } else {
       Serial.println("Du darfst höchstens 5 Mal drücken");
-    }  
-    wieOftWurdeTasteGedrueckt++;
+    }    
   }
 }
