@@ -1,107 +1,95 @@
-#include <WiFi.h>
-#include <WebServer.h>
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME280.h>
+#include <WiFi.h> // Für ESP32
 
-const char* ssid = "FRITZ!Box 7490_EXT";
-const char* password = "43632537225272598463";
+Adafruit_BME280 bme; // I2C
+const char* ssid = "A15 von Owen"; // WLAN SSID
+const char* password = "Amber111"; // WLAN Passwort
 
-// Web server on port 80
-WebServer server(80);
-
-// LED pin
-const int ledPin = 2;  // default ESP32 built-in LED
-
-// Sensor pin
-const int sensorPin = 34;
-
-// ---- HTML PAGE ----
-String webpage() {
-  return R"=====(
-<!DOCTYPE html>
-<html>
-<head>
-  <title>ESP32 Control Panel</title>
-  <style>
-    body { font-family: Arial; text-align: center; margin-top: 40px; }
-    button { padding: 15px; font-size: 18px; margin: 10px; width: 150px; }
-    #sensor { font-size: 24px; color: blue; margin-top: 20px; }
-  </style>
-</head>
-<body>
-  <h1>ESP32 Control Panel</h1>
-
-  <button onclick="fetch('/on')">LED ON</button>
-  <button onclick="fetch('/off')">LED OFF</button>
-  <button onclick="fetch('/aaa')">LED AAAA</button>
-
-  <h2>Sensor Value:</h2>
-  <div id="sensor">---</div>
-
-  <script>
-    function updateSensor() {
-      fetch('/sensor')
-        .then(response => response.text())
-        .then(value => { document.getElementById('sensor').innerHTML = value; });
-    }
-    setInterval(updateSensor, 1000); // update every second
-  </script>
-</body>
-</html>
-)=====";
-}
-
-// ---- HANDLERS ----
-
-void handleRoot() {
-  server.send(200, "text/html", webpage());
-}
-
-void handleOn() {
-  digitalWrite(ledPin, HIGH);
-  Serial.println("Luftfeuchtigkeit: ");
-  server.send(200, "text/plain", "LED ON");
-}
-
-     void handleAaa() {
-      
-       Serial.println("aaa: ");
-       server.send(200, "text/plain", "LED ON");
-     }
-
-void handleOff() {
-  digitalWrite(ledPin, LOW);
-  server.send(200, "text/plain", "LED OFF");
-}
-
-void handleSensor() {
-  int value = analogRead(sensorPin);
-  server.send(200, "text/plain", String(value));
-}
+WiFiServer server(80);
 
 void setup() {
-  Serial.begin(115200);
+    Serial.begin(115200);
 
-  pinMode(ledPin, OUTPUT);
+    // BME280 starten
+    if (!bme.begin(0x76)) {
+        Serial.println("Konnte keinen gültigen BME280 Sensor finden!");
+        while (1);
+    }
 
-  WiFi.begin(ssid, password);
-  Serial.print("Connecting to Wi-Fi");
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500); Serial.print(".");
-  }
+    // WLAN verbinden
+    WiFi.begin(ssid, password);
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(1000);
+        Serial.println("Verbinde mit WLAN...");
+    }
 
-  Serial.println("\nConnected!");
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
-
-  // Route setup
-  server.on("/", handleRoot);
-  server.on("/on", handleOn);
-  server.on("/off", handleOff);
-  server.on("/aaa", handleAaa);
-  server.on("/sensor", handleSensor);
-
-  server.begin();
+    server.begin();
+    Serial.println("Server gestartet");
+    Serial.print("IP Adresse: ");
+    Serial.println(WiFi.localIP());
 }
 
 void loop() {
-  server.handleClient();
+    // Überprüfen, ob ein Client verbunden ist
+    WiFiClient client = server.available();
+    if (client) {
+        String request = client.readStringUntil('\r');
+        client.flush();
+
+        if (request.indexOf("/data") != -1) { // Anforderung der Sensordaten
+            // Werte aus dem BME280 lesen
+            float temperature = bme.readTemperature();
+            float humidity = bme.readHumidity();
+            float pressure = bme.readPressure() / 100.0F; // hPa
+
+            // JSON-Antwort erstellen
+            String jsonResponse = "{";
+            jsonResponse += "\"temperature\": " + String(temperature) + ",";
+            jsonResponse += "\"humidity\": " + String(humidity) + ",";
+            jsonResponse += "\"pressure\": " + String(pressure);
+            jsonResponse += "}";
+
+            // HTTP Antwort senden
+            client.println("HTTP/1.1 200 OK");
+            client.println("Content-Type: application/json");
+            client.println("Connection: close");
+            client.println();
+            client.println(jsonResponse);
+        } else { // Standard-HTML-Seite
+            String response = "<html><head><meta charset='UTF-8'><style>";
+            response += "body { font-family: 'IMPACT', Aral; background-color: #fad6a5; color: #333; text-align: center; display: flex; justify-content: center; align-items: center; height: 100vh; }";
+            response += ".container { max-width: 700px; width: 100%; padding: 40px; background: white; border-radius: 20px; box-shadow: 0 4px 40px rgba(0, 0, 0, 0.1); text-align: center; }";
+            response += "h1 { font-size: 3em; color: #0000e6; }"; // Überschrift auf 3em setzen
+            response += ".sensor-data { font-size: 2em; margin: 40px 0; padding: 30px; border: 1px solid #007acc; border-radius: 16px; background-color: #f0f8ff; transition: transform 0.3s; }";
+            response += ".sensor-data:hover { transform: scale(1.05); }";
+            response += "</style></head><body>";
+            response += "<div class='container'>";
+            response += "<h1>BME280 Sensor Daten</h1>";
+            response += "<p class='sensor-data' id='temperature'>Temperatur: -- &deg;C</p>";
+            response += "<p class='sensor-data' id='humidity'>Luftfeuchtigkeit: -- %</p>";
+            response += "<p class='sensor-data' id='pressure'>Luftdruck: -- hPa</p>";
+            response += "<script>";
+            response += "setInterval(function() {";
+            response += "fetch('/data').then(response => response.json()).then(data => {";
+            response += "document.getElementById('temperature').innerHTML = 'Temperatur: ' + data.temperature + ' &deg;C';";
+            response += "document.getElementById('humidity').innerHTML = 'Luftfeuchtigkeit: ' + data.humidity + ' %';";
+            response += "document.getElementById('pressure').innerHTML = 'Luftdruck: ' + data.pressure + ' hPa';";
+            response += "}).catch(error => console.log('Fehler:', error));";
+            response += "}, 1000);"; // Aktualisiere alle 1 Sekunde
+            response += "</script>";
+            response += "</div></body></html>";
+
+           // HTTP Antwort senden
+            client.println("HTTP/1.1 200 OK");
+            client.println("Content-Type: text/html");
+            client.println("Connection: close");
+            client.println();
+            client.println(response);
+        }
+        client.stop(); // Verbindung schließen
+    }
 }
+
+
