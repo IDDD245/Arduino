@@ -59,7 +59,7 @@ void loop() {
             client.println(jsonResponse);
         } else { // Standard-HTML-Seite
            String response = "<html><head><meta charset='UTF-8'><style>";
-response += "body { font-family: 'IMPACT', sans-serif; background-color: #e6f7ff; color: #333; text-align: center; padding: 20px; }";
+response += "body { font-family: 'IMPACT', sans-serif; background-color: #fad6a5; color: #333; text-align: center; padding: 20px; }";
 response += "h1 { color: #007acc; }";
 response += ".container { max-width: 600px; margin: 0 auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1); }";
 response += ".sensor-data { font-size: 1.5em; margin: 20px 0; padding: 15px; border: 1px solid #007acc; border-radius: 8px; background-color: #f0f8ff; transition: transform 0.3s; }";
