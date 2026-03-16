@@ -4,8 +4,8 @@
 #include <WiFi.h> // Für ESP32
 
 Adafruit_BME280 bme; // I2C
-const char* ssid = "A15 von Owen"; // WLAN SSID
-const char* password = "Amber111"; // WLAN Passwort
+const char* ssid = "FRITZ!Box 7490 EXT"; // WLAN SSID
+const char* password = "43632537225272598463"; // WLAN Passwort
 
 WiFiServer server(80);
 

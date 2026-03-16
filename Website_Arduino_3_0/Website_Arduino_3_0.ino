@@ -13,7 +13,7 @@ void setup() {
         Serial.begin(115200);
 
     // WLAN Netzwerk konfigurieren
-    IPAddress localIP(192, 168, 42, 77);  // Setze hier deine gewünschte IP-Adresse ein
+    IPAddress localIP(192, 168, 43, 200);  // Setze hier deine gewünschte IP-Adresse ein
     IPAddress gateway(192, 168, 1, 1);    // Gateway (Router; meistens die .1 Adresse im Netzwerk)
     IPAddress subnet(255, 255, 255, 0);   // Subnetzmaske
 
@@ -97,5 +97,3 @@ void loop() {
         client.stop(); // Verbindung schließen
     }
 }
-
-
